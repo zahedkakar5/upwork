@@ -30,8 +30,8 @@ export function Settings() {
     ],
     [
       "Active jobs",
-      "Briefs and drafts stay in memory. Clearing a task or signing out removes active content.",
-      "Session only",
+      "Your active brief and proposal are saved on this computer. Clearing a task or signing out removes active content.",
+      "Saved locally",
     ],
     [
       "Idle clearing",

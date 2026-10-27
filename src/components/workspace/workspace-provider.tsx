@@ -15,7 +15,9 @@ import {
   canReview,
   initialTask,
   proposalReducer,
+  restoreSavedTask,
   screeningQuestions,
+  taskHasContent,
   validUpworkUrl,
   type JobInput,
   type ProposalStep,
@@ -28,6 +30,8 @@ import type {
   SessionCounts,
 } from "@/lib/types";
 import { Dialog } from "@/components/ui/dialog";
+
+const taskStorageKey = "nordstone.active-proposal.v1";
 
 function useWorkspaceState(
   initialProfile: CompanyProfile,
@@ -48,7 +52,8 @@ function useWorkspaceState(
   const [manualCopy, setManualCopy] = useState<string | null>(null);
   const revision = useRef(0),
     controller = useRef<AbortController | null>(null),
-    lastActivity = useRef(0);
+    lastActivity = useRef(0),
+    restoredTask = useRef(false);
   const notify = (message: string) => setNotice({ message, id: Date.now() });
   const invalidateRequest = () => {
     revision.current++;
@@ -62,8 +67,31 @@ function useWorkspaceState(
   const reset = () => {
     invalidateRequest();
     dispatch({ type: "reset" });
+    window.localStorage.removeItem(taskStorageKey);
     setManualCopy(null);
   };
+  useEffect(() => {
+    try {
+      const saved = restoreSavedTask(
+        JSON.parse(window.localStorage.getItem(taskStorageKey) ?? "null"),
+      );
+      if (saved) dispatch({ type: "restore", task: saved });
+    } catch {
+      window.localStorage.removeItem(taskStorageKey);
+    } finally {
+      restoredTask.current = true;
+    }
+  }, []);
+  useEffect(() => {
+    if (!restoredTask.current || task.phase === "generating") return;
+    try {
+      if (taskHasContent(task))
+        window.localStorage.setItem(taskStorageKey, JSON.stringify(task));
+      else window.localStorage.removeItem(taskStorageKey);
+    } catch {
+      // Keep the workspace usable if browser storage is unavailable or full.
+    }
+  }, [task]);
   const logout = async () => {
     reset();
     try {

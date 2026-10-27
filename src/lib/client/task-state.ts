@@ -47,6 +47,7 @@ export type ProposalAction =
   | { type: "review" }
   | { type: "approve" }
   | { type: "profile_changed" }
+  | { type: "restore"; task: ProposalState }
   | { type: "reset" };
 export const screeningQuestions = (value: string) =>
   value
@@ -78,7 +79,10 @@ export function validUpworkUrl(value: string): boolean {
     return (
       url.protocol === "https:" &&
       ["www.upwork.com", "upwork.com"].includes(url.hostname) &&
-      /^\/(?:jobs\/|freelance-jobs\/apply\/)/.test(url.pathname) &&
+      /^(?:\/(?:jobs\/|freelance-jobs\/apply\/)|\/nx\/(?:find-work\/best-matches\/details|search\/jobs\/details)\/)/.test(
+        url.pathname,
+      ) &&
+      url.pathname.includes("~02") &&
       !url.username &&
       !url.password
     );
@@ -173,7 +177,46 @@ export function proposalReducer(
       return canApprove(state) ? { ...state, step: 3, approved: true } : state;
     case "profile_changed":
       return { ...initialTask(), job: state.job };
+    case "restore":
+      return action.task.phase === "generating"
+        ? { ...action.task, phase: "idle", step: 0, error: "" }
+        : action.task;
     case "reset":
       return initialTask();
   }
 }
+
+const isString = (value: unknown): value is string => typeof value === "string";
+
+export function restoreSavedTask(value: unknown): ProposalState | null {
+  if (!value || typeof value !== "object") return null;
+  const task = value as Partial<ProposalState>;
+  const job = task.job as Partial<JobInput> | undefined;
+  if (
+    !job || !isString(job.url) || !isString(job.title) ||
+    !isString(job.summary) || !isString(job.questions) ||
+    typeof job.noAI !== "boolean" || typeof job.noAgency !== "boolean" ||
+    ![0, 1, 2, 3].includes(task.step ?? -1) ||
+    !["idle", "generating", "ready", "error"].includes(task.phase ?? "") ||
+    typeof task.approved !== "boolean" || !isString(task.error)
+  ) return null;
+  if (task.draft !== null && task.draft !== undefined) {
+    const draft = task.draft as Partial<DraftResult>;
+    if (!isString(draft.proposal_body) || !Array.isArray(draft.screening_answers) ||
+      !Array.isArray(draft.unsupported_claims) || !Array.isArray(draft.missing_information) ||
+      !draft.screening_answers.every((answer) => answer && typeof answer === "object" &&
+        isString((answer as { question_id?: unknown }).question_id) &&
+        (isString((answer as { answer_or_null?: unknown }).answer_or_null) ||
+          (answer as { answer_or_null?: unknown }).answer_or_null === null)) ||
+      !draft.unsupported_claims.every(isString) || !draft.missing_information.every(isString)) return null;
+  }
+  return {
+    job: { ...emptyJob(), ...job }, step: task.step as ProposalStep,
+    phase: task.phase as ProposalState["phase"], draft: (task.draft ?? null) as DraftResult | null,
+    profileSnapshot: task.profileSnapshot ?? null, approved: task.approved, error: task.error,
+  };
+}
+
+export const taskHasContent = (task: ProposalState) => Boolean(
+  task.job.url || task.job.title || task.job.summary || task.job.questions || task.draft,
+);

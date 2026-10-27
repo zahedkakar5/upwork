@@ -11,6 +11,7 @@
     "format": "prettier --write src tests next.config.ts vitest.config.ts README.md AGENTS.md"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "lucide-react": "1.61.0",
     "next": "16.4.2",
     "react": "19.3.1",

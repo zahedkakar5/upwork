@@ -3,6 +3,7 @@ import {
   initialTask,
   proposalReducer,
   canApprove,
+  restoreSavedTask,
   validUpworkUrl,
   type ProposalState,
 } from "../src/lib/client/task-state";
@@ -68,13 +69,27 @@ describe("proposal state and review integrity", () => {
     ).toBeNull();
   });
   it("allows real Upwork job URL forms while rejecting lookalike hosts", () => {
-    expect(validUpworkUrl("https://www.upwork.com/jobs/~123")).toBe(true);
+    expect(validUpworkUrl("https://www.upwork.com/jobs/Test_~022056488576136638272")).toBe(true);
     expect(
-      validUpworkUrl("https://www.upwork.com/freelance-jobs/apply/Test_~123/"),
+      validUpworkUrl("https://www.upwork.com/freelance-jobs/apply/Test_~022056488576136638272/"),
+    ).toBe(true);
+    expect(
+      validUpworkUrl(
+        "https://www.upwork.com/nx/find-work/best-matches/details/~022114615649293712377",
+      ),
     ).toBe(true);
     expect(validUpworkUrl("https://upwork.com.attacker.test/jobs/~123")).toBe(
       false,
     );
     expect(validUpworkUrl("javascript:alert(1)")).toBe(false);
+  });
+  it("restores a saved completed proposal after a refresh", () => {
+    const approved = proposalReducer(ready(), { type: "approve" });
+    expect(restoreSavedTask(JSON.parse(JSON.stringify(approved)))).toEqual(
+      approved,
+    );
+  });
+  it("rejects malformed saved task data", () => {
+    expect(restoreSavedTask({ job: { title: 42 } })).toBeNull();
   });
 });

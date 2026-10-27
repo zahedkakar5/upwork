@@ -58,7 +58,7 @@ export function ProposalDesk() {
         </span>
         <span>
           <Icon name="lock" />
-          Session only · no autosave
+          Saved on this computer
         </span>
         <button className="text-button push" onClick={skip}>
           Skip this job

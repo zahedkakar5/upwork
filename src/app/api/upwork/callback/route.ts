@@ -25,6 +25,8 @@ export async function GET(request: Request) {
       .object({
         state: z.string(),
         redirectUri: z.string(),
+        clientId: z.string(),
+        verifier: z.string(),
         expiresAt: z.number(),
       })
       .safeParse(unseal(jar.get(OAUTH_COOKIE)?.value));
@@ -49,7 +51,12 @@ export async function GET(request: Request) {
     const code = params.get("code");
     if (!code || code.length > 4096) return fail();
     try {
-      const token = await exchangeCode(code, pending.data.redirectUri);
+      const token = await exchangeCode(
+        code,
+        pending.data.redirectUri,
+        pending.data.clientId,
+        pending.data.verifier,
+      );
       const sessionCookie = issueSession(Date.now(), "upwork");
       const session = verifySession(sessionCookie)!;
       const maxAge = Math.min(12 * 60 * 60, token.expires_in);

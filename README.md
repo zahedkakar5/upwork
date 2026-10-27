@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:8765 and choose **Preview workspace** for manual entry, or **Continue with Upwork** after configuring the approved API credentials below. Submission remains manual.
+Open http://127.0.0.1:8765 and choose **Preview workspace** for manual entry, or **Continue with Upwork** to connect through Upwork MCP. Submission remains manual.
 
 For a production build:
 
@@ -105,20 +105,18 @@ Tests use temporary profile files and synthetic fixtures. They verify persistenc
 
 ## Upwork connection
 
-The sign-in button starts Upwork's OAuth authorization code flow. Configure
-`UPWORK_CLIENT_ID`, `UPWORK_CLIENT_SECRET` and a stable private `SESSION_SECRET`
-on the server. Set `APP_ORIGIN` to your public HTTPS origin and register
-`https://your-domain/api/upwork/callback` as the callback URL in your Upwork app.
-The app needs **Read marketplace Job Postings** permission. Set
-`UPWORK_TENANT_ID` only if required for your approved tenant.
+The sign-in button starts Upwork MCP's OAuth 2.1 authorization-code flow. It
+uses dynamic client registration and PKCE, so no Upwork client ID, client secret
+or tenant ID needs to be created or stored. Set `APP_ORIGIN` to the exact public
+HTTPS origin of the deployed app and keep a stable private `SESSION_SECRET`.
 
 On Vercel, the exact platform-provided deployment, branch and production domains
 are also accepted when `VERCEL=1`. Arbitrary Host and cross-origin writes remain
 rejected. Environment changes require redeployment.
 
 After connecting, paste a current Upwork job-details URL and choose **Fetch job
-details**. The official GraphQL API supplies the title and brief; it does not
-invent details if access fails. Current numeric `~02` links are supported. Legacy
+details**. Nordstone uses the MCP `find_jobs` read operation to supply the title
+and brief; it does not invent details if access fails. Current numeric `~02` links are supported. Legacy
 `~01` links require manual entry. Screening questions and client restrictions
 must be checked separately. Direct submission is not implemented.
 
@@ -128,6 +126,5 @@ Expired authorization requires reconnection; signing out removes the cookies.
 The About us profile still uses a local JSON file: durable hosted persistence
 must be configured before using profile saves on Vercel serverless instances.
 
-Without approved credentials, Preview workspace and manual job entry still work.
-A successful live Upwork connection cannot be tested until those credentials are
-configured. OAuth and job import tests use mocked provider responses only.
+Without an Upwork connection, Preview workspace and manual job entry still work.
+OAuth and job import tests use mocked provider responses only.
