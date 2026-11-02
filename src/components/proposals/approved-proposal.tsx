@@ -3,6 +3,7 @@ import { useWorkspace } from "../workspace/workspace-provider";
 import { CardHeader } from "../ui/card-header";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
+import { SubmissionPanel } from "./submission-panel";
 import { screeningQuestions } from "@/lib/client/task-state";
 export function ApprovedProposal() {
   const { task, copy, finish, moveToStep } = useWorkspace();
@@ -13,7 +14,7 @@ export function ApprovedProposal() {
     <>
       <CardHeader
         title="Ready for your next step."
-        subtitle="Copy the reviewed text. You handle the submission."
+        subtitle="Review an Upwork submission preview, or copy the approved text."
         label="REVIEWED"
       />
       <div className="card-body">
@@ -34,6 +35,7 @@ export function ApprovedProposal() {
             </button>
           </div>
         ))}
+        <SubmissionPanel />
         <div className="complete">
           <div className="success-symbol">✓</div>
           <h2>
@@ -64,7 +66,7 @@ export function ApprovedProposal() {
         </button>
         <small>
           <Icon name="shield" />
-          No automatic submission
+          Your confirmation is required
         </small>
       </div>
     </>

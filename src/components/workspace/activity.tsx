@@ -14,7 +14,7 @@ export function Activity() {
         {[
           ["Drafts prepared", counts.prepared],
           ["Proposals copied", counts.copied],
-          ["Submitted manually", counts.submitted],
+          ["Submissions recorded", counts.submitted],
         ].map(([label, count]) => (
           <div className="card stat" key={label}>
             <small>{label}</small>

@@ -12,10 +12,11 @@ interface OpenAIResponse {
   status?: string;
   output?: { content?: { type: string; text?: string }[] }[];
 }
-export async function requestDraft(
+async function requestSingleDraft(
   config: AIConfig,
   input: PromptInput,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: typeof fetch,
+  timeoutMs = 90_000,
 ): Promise<unknown> {
   if (!config.apiKey)
     throw new AppError(
@@ -64,13 +65,20 @@ export async function requestDraft(
       headers,
       body: JSON.stringify(body),
       cache: "no-store",
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
-    throw new AppError(502, "The AI service did not respond. Try again.");
+    throw new RetryableModelError(
+      502,
+      "The AI service did not respond. Try again.",
+    );
   }
   if (!response.ok)
-    throw new AppError(
+    throw new (
+      [404, 408, 429, 500, 502, 503, 504].includes(response.status)
+        ? RetryableModelError
+        : AppError
+    )(
       502,
       [401, 403].includes(response.status)
         ? "The AI provider rejected this key or its permissions."
@@ -106,4 +114,44 @@ export async function requestDraft(
       "AI returned an incomplete or invalid result. No new draft was imported.",
     );
   }
+}
+
+class RetryableModelError extends AppError {}
+
+export async function requestDraft(
+  config: AIConfig,
+  input: PromptInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
+  if (config.provider !== "gemini")
+    return requestSingleDraft(config, input, fetchImpl);
+  const fallbackModels = (
+    process.env.GEMINI_FALLBACK_MODELS ??
+    "gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash-lite"
+  )
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean);
+  const models = [...new Set([config.model, ...fallbackModels])].slice(0, 4);
+  const deadline = Date.now() + 80_000;
+  let lastError: unknown;
+  for (const model of models) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    try {
+      return await requestSingleDraft(
+        { ...config, model },
+        input,
+        fetchImpl,
+        Math.min(20_000, remaining),
+      );
+    } catch (error) {
+      if (!(error instanceof RetryableModelError)) throw error;
+      lastError = error;
+    }
+  }
+  throw new AppError(
+    502,
+    `All available Gemini models failed. ${lastError instanceof Error ? lastError.message : "Please try again shortly."}`,
+  );
 }

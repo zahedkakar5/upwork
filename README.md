@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:8765 and choose **Preview workspace** for manual entry, or **Continue with Upwork** to connect through Upwork MCP. Submission remains manual.
+Open http://127.0.0.1:8765 and choose **Preview workspace** for manual entry, or **Continue with Upwork** to connect through Upwork MCP. Manual submission remains available; the reviewed MCP submission flow is in development.
 
 For a production build:
 
@@ -118,7 +118,7 @@ After connecting, paste a current Upwork job-details URL and choose **Fetch job
 details**. Nordstone uses the MCP `find_jobs` read operation to supply the title
 and brief; it does not invent details if access fails. Current numeric `~02` links are supported. Legacy
 `~01` links require manual entry. Screening questions and client restrictions
-must be checked separately. Direct submission is not implemented.
+must be checked separately. The reviewed MCP submission flow is implemented behind live-schema checks, with account authorization and end-to-end verification still pending.
 
 Tokens live only in encrypted, HttpOnly cookies bound to the signed session.
 They are never passed to React props, browser JavaScript or local data files.
@@ -128,3 +128,11 @@ must be configured before using profile saves on Vercel serverless instances.
 
 Without an Upwork connection, Preview workspace and manual job entry still work.
 OAuth and job import tests use mocked provider responses only.
+
+## Reviewed MCP submission (development)
+
+The approved-proposal screen includes a Review & submit panel. It loads accessible accounts, lets the operator select one and enter an exact USD bid, and reads the selected job and Connects wallet. Preparing an upstream preview requires explicit approval; submitting requires a separate confirmation of the returned preview and Connects cost. No automatic boosting or Connects purchases are supported.
+
+The server binds each review to its session, profile version and exact approved content and terms. Reviews expire after five minutes. One-way account/job fingerprints in `data/submission-receipts/` prevent repeated confirmation attempts across restarts; proposal text is not stored in those receipts. Uncertain results require checking Upwork directly, rather than automatic retry. Do not delete a receipt to retry without first reconciling the application on Upwork.
+
+**Live verification is pending:** Upwork authorization currently returns “User is not eligible to authorize.” The implementation validates every request against the authenticated MCP tool schema and refuses unknown fields. Initial submission mapping supports applications without screening questions or attachments. Jobs with screening questions remain manual until their upstream question identifiers and answer format are verified. Missing costs, balance or explicit eligibility also block confirmation. The confirmation path is tested with synthetic data; no real proposal has been submitted or Connects spent during development.

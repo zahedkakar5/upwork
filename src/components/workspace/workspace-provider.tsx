@@ -67,7 +67,11 @@ function useWorkspaceState(
   const reset = () => {
     invalidateRequest();
     dispatch({ type: "reset" });
-    window.localStorage.removeItem(taskStorageKey);
+    try {
+      window.localStorage.removeItem(taskStorageKey);
+    } catch {
+      /* State reset still works if storage is blocked. */
+    }
     setManualCopy(null);
   };
   useEffect(() => {
@@ -294,6 +298,11 @@ function useWorkspaceState(
     copy,
     finish,
     skip,
+    recordMcpSubmission: () =>
+      setCounts((current) => ({
+        ...current,
+        submitted: current.submitted + 1,
+      })),
     resolveNotes: () => dispatch({ type: "notes_resolved" }),
   };
 }

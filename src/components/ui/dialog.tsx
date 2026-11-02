@@ -17,7 +17,7 @@ export function Dialog({
     return () => element?.close();
   }, []);
   return (
-    <dialog ref={ref} onCancel={onClose} onClose={onClose} aria-label={title}>
+    <dialog ref={ref} onCancel={onClose} aria-label={title}>
       <h2>{title}</h2>
       {children}
       <Button variant="secondary" onClick={onClose}>

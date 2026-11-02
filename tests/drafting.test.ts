@@ -157,3 +157,43 @@ describe("AI proposal drafting", () => {
     expect(JSON.parse(options?.body as string).store).toBe(false);
   });
 });
+
+describe("Gemini fallback", () => {
+  it("tries another model after overload and returns its valid draft", async () => {
+    const fetcher = mockProvider();
+    fetcher.mockImplementationOnce(async () =>
+      Response.json({}, { status: 503 }),
+    );
+    const result = await generateDraft(input(), store(), gemini, fetcher);
+    expect(result.draft.proposal_body).toBe(draft.proposal_body);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][0]).toContain("gemini-3.5-flash");
+  });
+  it("stops on rejected credentials without trying more models", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({}, { status: 403 }),
+    );
+    await expect(
+      generateDraft(input(), store(), gemini, fetcher),
+    ).rejects.toThrow("rejected this key");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("tries every model once and stops after exhaustion", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({}, { status: 404 }),
+    );
+    await expect(
+      generateDraft(input(), store(), gemini, fetcher),
+    ).rejects.toThrow("All available Gemini models failed");
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(new Set(fetcher.mock.calls.map((call) => call[0])).size).toBe(4);
+  });
+  it("falls back after a network timeout", async () => {
+    const fetcher = mockProvider();
+    fetcher.mockRejectedValueOnce(new DOMException("Timeout", "TimeoutError"));
+    await expect(
+      generateDraft(input(), store(), gemini, fetcher),
+    ).resolves.toHaveProperty("draft");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+});

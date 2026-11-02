@@ -6,37 +6,22 @@ import { Icon } from "./ui/icon";
 import { Button } from "./ui/button";
 import { apiRequest } from "@/lib/client/api";
 
-export function LoginScreen({
-  upworkConfigured,
-  connectionFailed,
-}: {
-  upworkConfigured: boolean;
-  connectionFailed: boolean;
-}) {
-  const [error, setError] = useState(
-      connectionFailed
-        ? "Upwork connection was cancelled or could not be verified. Check the registered callback URL and try again."
-        : "",
-    ),
-    [opening, setOpening] = useState(false);
+export function LoginScreen() {
+  const [error, setError] = useState("");
+  const [opening, setOpening] = useState(false);
   const router = useRouter();
-  async function connectUpwork() {
+  async function connectMcp() {
     setOpening(true);
     setError("");
     try {
-      const result = await apiRequest<{ url: string }>("/api/upwork/login", {
-        method: "POST",
-        body: "{}",
-      });
+      const result = await apiRequest<{ url: string }>("/api/upwork/login", {method:"POST", body:"{}"});
       window.location.assign(result.url);
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Could not connect Upwork.",
-      );
+      setError(cause instanceof Error ? cause.message : "Could not connect Upwork MCP.");
       setOpening(false);
     }
   }
-  async function openPreview() {
+  async function openWorkspace() {
     setOpening(true);
     setError("");
     try {
@@ -57,7 +42,7 @@ export function LoginScreen({
   }
   return (
     <div className="signed-out">
-      <section className="login-page" aria-label="Sign in">
+      <section className="login-page" aria-label="Open workspace">
         <div className="login-story">
           <Brand />
           <div className="login-story-content">
@@ -108,50 +93,28 @@ export function LoginScreen({
               <span />
               Online AI workspace
             </span>
-            <span>PROTOTYPE / 03</span>
           </div>
           <div className="login-form-wrap">
             <div className="login-welcome">YOUR NORDSTONE WORKSPACE</div>
             <h2>Welcome back.</h2>
             <p className="login-description">
-              Connect Upwork to bring your jobs and AI workspace together.
+              Your company experience, projects and proposal tools in one place.
             </p>
-            <div className="upwork-sign-in">
-              <Button
-                className="login-submit"
-                onClick={() => void connectUpwork()}
-                disabled={opening}
-              >
-                Continue with Upwork
-                <Icon name="external" />
-              </Button>
-              <p className="upwork-connection-status">
-                <span />
-                {upworkConfigured
-                  ? "Connect securely through Upwork"
-                  : "Upwork connection not configured yet"}
-              </p>
-              <p id="login-error" role="status">
-                {error}
-              </p>
-            </div>
-            <div className="login-divider">
-              <span>or explore the prototype</span>
-            </div>
+            <Button className="login-submit" onClick={() => void connectMcp()} disabled={opening}>
+              Connect Upwork MCP<Icon name="external" />
+            </Button>
+            <div className="login-divider"><span>or enter jobs manually</span></div>
             <Button
               variant="secondary"
               className="preview-workspace"
-              onClick={openPreview}
+              onClick={openWorkspace}
               disabled={opening}
             >
-              {opening ? "Opening workspace…" : "Preview workspace"}
+              {opening ? "Opening workspace…" : "Open workspace"}
               <Icon name="arrow" />
             </Button>
-            <p className="login-privacy">
-              <Icon name="lock" />
-              Upwork sign-in will use Upwork’s authorisation page.
-              <br />
-              NordStone does not collect your Upwork password.
+            <p id="login-error" role="status">
+              {error}
             </p>
           </div>
           <div className="login-bottomline">

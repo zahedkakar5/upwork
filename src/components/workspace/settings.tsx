@@ -8,30 +8,30 @@ export function Settings() {
       `${status.provider === "gemini" ? "Google Gemini" : "OpenAI"} · ${status.model}`,
       status.aiConfigured
         ? "The key is configured on the server. Access is verified when you generate."
-        : "Configure the provider API key locally and restart the app.",
+        : "Add your provider API key to enable AI drafting.",
       status.aiConfigured ? "Configured" : "Not connected",
     ],
     [
       "Upwork",
       status.upworkConnected
-        ? "Upwork authorization is active. Paste a job URL to import its title and brief. Submission remains manual."
+        ? "Upwork authorization is active. Paste a job URL to import its title and brief. Review a submission preview or submit manually."
         : "Connect Upwork from the login page to import jobs. Manual entry is available.",
       status.upworkConnected ? "Connected" : "Not connected",
     ],
     [
       "Workspace",
-      `${profile.memberName} / ${profile.companyName}. ${status.upworkConnected ? "Upwork authorization active." : "Preview workspace."}`,
-      "Preview",
+      `${profile.memberName} / ${profile.companyName}. ${status.upworkConnected ? "Upwork authorization active." : "Manual job entry."}`,
+      "Active",
     ],
     [
       "About us",
-      "Your saved company profile is kept on this computer and used for AI drafting.",
-      "Saved locally",
+      "Your saved company profile is used for AI drafting.",
+      "Saved",
     ],
     [
       "Active jobs",
-      "Your active brief and proposal are saved on this computer. Clearing a task or signing out removes active content.",
-      "Saved locally",
+      "Your active brief and proposal are saved in this browser. Clearing a task or signing out removes active content.",
+      "Saved",
     ],
     [
       "Idle clearing",
@@ -42,7 +42,7 @@ export function Settings() {
   return (
     <>
       <PageHeading
-        title="Your local workspace."
+        title="Your workspace."
         subtitle="Connections and workspace settings."
       />
       <section className="card">

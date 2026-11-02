@@ -8,8 +8,9 @@ import { Dialog } from "../ui/dialog";
 import { useWorkspace } from "./workspace-provider";
 
 const navigation: { href: string; label: string; icon: IconName }[] = [
-  { href: "/dashboard", label: "Overview", icon: "home" },
+  { href: "/dashboard", label: "Suggested jobs", icon: "home" },
   { href: "/proposals", label: "Proposal desk", icon: "desk" },
+  { href: "/projects", label: "Projects", icon: "layers" },
   { href: "/about", label: "About us", icon: "book" },
   { href: "/activity", label: "Activity", icon: "chart" },
 ];
@@ -55,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
           <div className="local-status">
             <span />
-            Local web workspace
+            NordStone workspace
             <Icon name="shield" />
           </div>
           <button className="profile" onClick={() => setModal("profile")}>
@@ -76,13 +77,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="topbar-right">
             <span className="prototype-tag">
-              {status.upworkConnected
-                ? "UPWORK CONNECTED"
-                : "PREVIEW WORKSPACE"}
+              {status.upworkConnected ? "UPWORK CONNECTED" : "WORKSPACE"}
             </span>
             <span className="offline-pill">
               <span />
-              Online mode
+              Workspace active
             </span>
             <button
               className="icon-button"
@@ -97,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <footer>
           <span>
             <Icon name="lock" />
-            Active jobs stay in memory. Proposals are submitted manually.
+            You approve every submission.
           </span>
           <span>
             NordStone desk<b>v1.0</b>
@@ -121,15 +120,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </p>
               <p>
                 AI generation sends the selected task and saved company profile
-                to your configured AI provider. Active job content is not saved
-                by NordStone.
+                to your configured AI provider. Active work is saved in this browser.
               </p>
             </>
           ) : (
             <p>
               {status.upworkConnected
                 ? "Upwork is connected for job import."
-                : "You are using the preview workspace. Upwork is not connected."}{" "}
+                : "Upwork is not connected. You can enter jobs manually."}{" "}
               Signing out clears the active job and draft.
             </p>
           )}

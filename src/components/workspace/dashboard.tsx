@@ -1,125 +1,209 @@
 "use client";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWorkspace } from "./workspace-provider";
 import { PageHeading } from "../ui/page-heading";
-import { Icon, type IconName } from "../ui/icon";
+import { Button } from "../ui/button";
+import { Dialog } from "../ui/dialog";
+import { apiRequest } from "@/lib/client/api";
+import {
+  projectSearches,
+  matchingProjects,
+  type SuggestedJob,
+} from "@/lib/job-suggestions";
 export function Dashboard() {
-  const { profile, task, counts } = useWorkspace();
-  const links: {
-    href: string;
-    icon: IconName;
-    title: string;
-    subtitle: string;
-  }[] = [
-    {
-      href: "/about",
-      icon: "book",
-      title: `Tell AI about ${profile.companyName}`,
-      subtitle: "Save your skills, services and real experience.",
-    },
-    {
-      href: "/settings",
-      icon: "settings",
-      title: "Check your workspace",
-      subtitle: "Manage your AI connection and workspace.",
-    },
-  ];
+  const { status, task, reset, updateJob } = useWorkspace();
+  const router = useRouter();
+  const [category, setCategory] = useState(projectSearches[0].category);
+  const [jobs, setJobs] = useState<SuggestedJob[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState<SuggestedJob | null>(null);
+  const [searched, setSearched] = useState(false);
+  useEffect(() => {
+    if (!status.upworkConnected) return;
+    const abort = new AbortController();
+    setLoading(true);
+    setError("");
+    setJobs([]);
+    setSearched(false);
+    apiRequest<{ jobs: SuggestedJob[] }>("/api/upwork/suggestions", {
+      method: "POST",
+      headers: { "X-Desk-Token": status.csrf },
+      body: JSON.stringify({ category }),
+      signal: abort.signal,
+    })
+      .then((result) => {
+        setJobs(result.jobs);
+        setSearched(true);
+      })
+      .catch((cause) => {
+        if (!abort.signal.aborted)
+          setError(
+            cause instanceof Error ? cause.message : "Could not fetch jobs.",
+          );
+      })
+      .finally(() => {
+        if (!abort.signal.aborted) setLoading(false);
+      });
+    return () => abort.abort();
+  }, [category, status.csrf, status.upworkConnected]);
+  async function refreshJobs() {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await apiRequest<{ jobs: SuggestedJob[] }>(
+        "/api/upwork/suggestions",
+        {
+          method: "POST",
+          headers: { "X-Desk-Token": status.csrf },
+          body: JSON.stringify({ category }),
+        },
+      );
+      setJobs(result.jobs);
+      setSearched(true);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not fetch jobs.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function connect() {
+    try {
+      const result = await apiRequest<{ url: string }>("/api/upwork/login", {
+        method: "POST",
+        body: "{}",
+      });
+      window.location.assign(result.url);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not connect Upwork.",
+      );
+    }
+  }
+  function useJob(job: SuggestedJob) {
+    if (task.job.title || task.job.summary || task.draft) {
+      setSelected(job);
+      return;
+    }
+    openJob(job);
+  }
+  function openJob(job: SuggestedJob) {
+    setSelected(null);
+    reset();
+    updateJob({
+      title: job.title,
+      url: job.url,
+      summary: job.summary,
+      questions: "",
+      noAI: false,
+      noAgency: false,
+    });
+    router.push("/proposals");
+  }
   return (
     <>
       <PageHeading
-        title={`Welcome back, ${profile.memberName}.`}
-        subtitle="A fresh opportunity. A little focus. A proposal that sounds like you."
-        eyebrow="YOUR WORKSPACE, AT A GLANCE"
+        title="Suggested jobs"
+        subtitle="Find opportunities that fit the work we’ve already delivered."
+        eyebrow="YOUR EXPERIENCE. YOUR NEXT OPPORTUNITY."
         action={
-          <span className="session-user">
-            {profile.memberName} / {profile.companyName}
-          </span>
+          <Button
+            disabled={loading || !status.upworkConnected}
+            onClick={() => void refreshJobs()}
+          >
+            {loading ? "Finding jobs…" : "Refresh jobs"}
+          </Button>
         }
       />
-      <section className="card overview-hero">
-        <div>
-          <div className="eyebrow">MAKE YOUR NEXT MOVE</div>
-          <h2>Good proposals start with good preparation.</h2>
-          <p>
-            Add the job details. AI combines the brief with your saved About us
-            profile to write a tailored proposal.
-          </p>
-          <Link href="/proposals" className="button primary">
-            <Icon name="plus" />
-            {task.draft ? "Continue your proposal" : "Create an AI proposal"}
-          </Link>
+      <section className="card suggestion-source">
+        <h2>Match jobs to our projects</h2>
+        <p>Choose an area of experience to discover related jobs on Upwork.</p>
+        <div className="suggestion-filters">
+          {projectSearches.map((s) => (
+            <button
+              className={`button ${category === s.category ? "primary" : "secondary"}`}
+              key={s.category}
+              aria-pressed={category === s.category}
+              disabled={loading}
+              onClick={() => setCategory(s.category)}
+            >
+              {s.category}
+            </button>
+          ))}
         </div>
-        <div className="hero-art" aria-hidden="true">
-          ✳
+        <div className="project-matches">
+          {matchingProjects(category).map((p) => (
+            <span key={p.name}>{p.name}</span>
+          ))}
         </div>
       </section>
-      <div className="stat-grid">
-        {[
-          ["Drafts prepared", counts.prepared],
-          ["Proposals copied", counts.copied],
-          ["Submitted manually", counts.submitted],
-        ].map(([label, value]) => (
-          <div className="card stat" key={label}>
-            <small>{label}</small>
-            <strong>{value}</strong>
-            <span className="hint">This session</span>
-          </div>
+      {!status.upworkConnected && (
+        <section className="card suggestion-source">
+          <h2>Connect Upwork to find your next project</h2>
+          <p>
+            Search real jobs through Upwork MCP, then choose one to prepare a
+            tailored proposal.
+          </p>
+          <Button onClick={() => void connect()}>Connect Upwork MCP</Button>
+        </section>
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      {loading && (
+        <p role="status">Searching Upwork for relevant opportunities…</p>
+      )}
+      {searched && !loading && !jobs.length && (
+        <section className="card suggestion-source">
+          <h2>No matching jobs found</h2>
+          <p>Try another project category or refresh for new opportunities.</p>
+        </section>
+      )}
+      <div className="projects-grid">
+        {jobs.map((job) => (
+          <article className="card project-card" key={job.url}>
+            <span className="project-category">
+              Similar to{" "}
+              {matchingProjects(category)
+                .map((p) => p.name)
+                .join(", ")}
+            </span>
+            <h2>
+              <button className="job-title-button" onClick={() => useJob(job)}>
+                {job.title}
+              </button>
+            </h2>
+            <p className="suggested-description">{job.summary}</p>
+            <div className="suggested-actions">
+              <a href={job.url} target="_blank" rel="noreferrer">
+                View on Upwork ↗
+              </a>
+              <Button onClick={() => useJob(job)}>Prepare proposal →</Button>
+            </div>
+          </article>
         ))}
       </div>
-      <div className="overview-columns">
-        <section className="card">
-          <div className="card-head">
-            <div>
-              <h2>Your next steps</h2>
-              <p>Everything you need to get started.</p>
-            </div>
-          </div>
-          <div className="card-body">
-            {links.map((link) => (
-              <Link href={link.href} key={link.href} className="quick-link">
-                <span className="section-icon">
-                  <Icon name={link.icon} />
-                </span>
-                <span>
-                  <strong>{link.title}</strong>
-                  <small>{link.subtitle}</small>
-                </span>
-                <Icon name="arrow" />
-              </Link>
-            ))}
-          </div>
-        </section>
-        <section className="card">
-          <div className="card-head">
-            <div>
-              <h2>A simple, human workflow</h2>
-              <p>Your judgement at every step.</p>
-            </div>
-          </div>
-          <div className="card-body">
-            <ol className="workflow-list">
-              {[
-                ["Select & prepare", "Paste the job link, title and brief."],
-                [
-                  "Generate & review",
-                  "AI writes the proposal and screening answers.",
-                ],
-                [
-                  "Approve & copy",
-                  "Approve the final version. Submit in Upwork yourself.",
-                ],
-              ].map(([title, detail]) => (
-                <li key={title}>
-                  <div>
-                    <strong>{title}</strong>
-                    <p>{detail}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-      </div>
+      {selected && (
+        <Dialog
+          title="Replace your current proposal?"
+          onClose={() => setSelected(null)}
+        >
+          <p>
+            Opening “{selected.title}” will clear your current job and draft.
+          </p>
+          <Button onClick={() => openJob(selected)}>
+            Replace and continue
+          </Button>{" "}
+          <Button variant="secondary" onClick={() => setSelected(null)}>
+            Keep current proposal
+          </Button>
+        </Dialog>
+      )}
     </>
   );
 }
