@@ -88,54 +88,6 @@ export async function accessToken(
     return null;
   return result.data.accessToken;
 }
-export const CLIENT_METADATA_PATH = "/api/upwork/client-metadata";
-export function clientMetadata(origin: string) {
-  return {
-    client_id: `${origin}${CLIENT_METADATA_PATH}`,
-    client_name: "Nordstone Proposal Desk",
-    client_uri: origin,
-    redirect_uris: [`${origin}/api/upwork/callback`],
-    grant_types: ["authorization_code"],
-    response_types: ["code"],
-    token_endpoint_auth_method: "none",
-  };
-}
-export async function authorizationClient(redirectUri: string) {
-  const callback = new URL(redirectUri);
-  if (callback.protocol === "https:") {
-    let response: Response;
-    try {
-      response = await fetch(
-        "https://mcp.upwork.com/.well-known/oauth-authorization-server",
-        {
-          cache: "no-store",
-          signal: AbortSignal.timeout(10_000),
-          headers: { Accept: "application/json" },
-        },
-      );
-    } catch {
-      throw new AppError(
-        502,
-        "Could not check Upwork's sign-in capabilities. Try again later.",
-      );
-    }
-    const metadata = z
-      .object({
-        issuer: z.literal("https://mcp.upwork.com"),
-        client_id_metadata_document_supported: z.boolean().optional(),
-      })
-      .safeParse(await response.json().catch(() => null));
-    if (!response.ok || !metadata.success)
-      throw new AppError(
-        502,
-        "Upwork returned invalid sign-in capabilities. No authorization was started.",
-      );
-    if (metadata.data.client_id_metadata_document_supported)
-      return clientMetadata(callback.origin).client_id;
-  }
-  return registerClient(redirectUri);
-}
-
 const registrationSchema = z.object({ client_id: z.string().min(1) });
 export async function registerClient(redirectUri: string) {
   let response: Response;
