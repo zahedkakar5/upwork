@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <footer>
           <span>
             <Icon name="lock" />
-            You approve every submission.
+            Review here. Submit manually on Upwork.
           </span>
           <span>
             NordStone desk<b>v1.0</b>

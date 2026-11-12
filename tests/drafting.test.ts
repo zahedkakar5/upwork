@@ -197,3 +197,16 @@ describe("Gemini fallback", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });
+
+it("preserves the client-required opening as the first copied proposal text", async () => {
+  const result = await generateDraft(
+    {
+      ...input(),
+      summary: 'Build an app. Start your cover letter with "Rise Design".',
+    },
+    store(),
+    gemini,
+    mockProvider(),
+  );
+  expect(result.draft.proposal_body.startsWith("Rise Design\n")).toBe(true);
+});

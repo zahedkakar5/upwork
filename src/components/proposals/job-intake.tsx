@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { clientRestrictions, openingKeyword } from "@/lib/job-discovery";
 import { apiRequest } from "@/lib/client/api";
 import { useWorkspace } from "../workspace/workspace-provider";
 import { CardHeader } from "../ui/card-header";
@@ -26,15 +27,16 @@ export function JobIntake() {
     setFetching(true);
     setImportMessage("");
     try {
-      const details = await apiRequest<{ title: string; summary: string }>(
-        "/api/upwork/job",
-        {
-          method: "POST",
-          headers: { "X-Desk-Token": status.csrf },
-          signal: abort.signal,
-          body: JSON.stringify({ url: snapshot.url }),
-        },
-      );
+      const details = await apiRequest<{
+        title: string;
+        summary: string;
+        questions: string[];
+      }>("/api/upwork/job", {
+        method: "POST",
+        headers: { "X-Desk-Token": status.csrf },
+        signal: abort.signal,
+        body: JSON.stringify({ url: snapshot.url }),
+      });
       if (abort.signal.aborted) return;
       if (latestJob.current !== snapshot) {
         setImportMessage(
@@ -45,6 +47,8 @@ export function JobIntake() {
       updateJob({
         title: details.title,
         summary: details.summary,
+        questions: (details.questions ?? []).join("\n"),
+        ...clientRestrictions(details.summary),
       });
       setImportMessage(
         "Title and brief imported from Upwork. Check screening questions and restrictions before generating.",
@@ -148,7 +152,16 @@ export function JobIntake() {
               placeholder="Paste the client’s requirements here…"
             />
           </div>
-          <details className="extra-options">
+          {openingKeyword(job.summary) && (
+            <p className="hint">
+              Required opening: <strong>{openingKeyword(job.summary)}</strong>.
+              The draft will start with this phrase.
+            </p>
+          )}
+          <details
+            className="extra-options"
+            open={Boolean(job.questions || job.noAI || job.noAgency)}
+          >
             <summary>
               Screening questions & client restrictions <span>optional</span>
             </summary>

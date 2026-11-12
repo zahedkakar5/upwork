@@ -14,7 +14,9 @@ describe("suggested jobs", () => {
           "<untrusted_participant_content>Meal planning</untrusted_participant_content>",
       },
     };
-    expect(normalizeSuggestedJobs({ data: { jobs: [job, job] } })).toEqual([
+    expect(
+      normalizeSuggestedJobs({ data: { jobs: [job, job] } }),
+    ).toMatchObject([
       { url: job.url, title: "Fitness application", summary: "Meal planning" },
     ]);
   });

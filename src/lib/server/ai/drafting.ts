@@ -1,4 +1,5 @@
 import "server-only";
+import { openingKeyword, clientRestrictions } from "../../job-discovery";
 import {
   draftResultSchema,
   type DraftRequest,
@@ -45,7 +46,11 @@ export async function generateDraft(
   config: AIConfig = getAIConfig(),
   fetchImpl: typeof fetch = fetch,
 ) {
-  if (request.noAI || request.noAgency)
+  if (
+    request.noAI ||
+    request.noAgency ||
+    Object.values(clientRestrictions(request.summary)).some(Boolean)
+  )
     throw new AppError(
       400,
       "The client’s restrictions block this AI agency proposal.",
@@ -60,6 +65,10 @@ export async function generateDraft(
     await requestDraft(config, buildPromptInput(request, profile), fetchImpl),
     request.questions,
   );
+  const opening = openingKeyword(request.summary);
+  if (opening && !draft.proposal_body.startsWith(opening)) {
+    draft.proposal_body = opening + "\n" + draft.proposal_body;
+  }
   if ((await store.load()).version !== profile.version)
     throw new AppError(
       409,

@@ -6,18 +6,29 @@ import { Icon } from "./ui/icon";
 import { Button } from "./ui/button";
 import { apiRequest } from "@/lib/client/api";
 
-export function LoginScreen() {
-  const [error, setError] = useState("");
+export function LoginScreen({
+  connectionError = "",
+}: {
+  connectionError?: string;
+}) {
+  const [error, setError] = useState(connectionError);
   const [opening, setOpening] = useState(false);
   const router = useRouter();
   async function connectMcp() {
     setOpening(true);
     setError("");
     try {
-      const result = await apiRequest<{ url: string }>("/api/upwork/login", {method:"POST", body:"{}"});
+      const result = await apiRequest<{ url: string }>("/api/upwork/login", {
+        method: "POST",
+        body: "{}",
+      });
       window.location.assign(result.url);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not connect Upwork MCP.");
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Could not connect Upwork MCP.",
+      );
       setOpening(false);
     }
   }
@@ -100,10 +111,17 @@ export function LoginScreen() {
             <p className="login-description">
               Your company experience, projects and proposal tools in one place.
             </p>
-            <Button className="login-submit" onClick={() => void connectMcp()} disabled={opening}>
-              Connect Upwork MCP<Icon name="external" />
+            <Button
+              className="login-submit"
+              onClick={() => void connectMcp()}
+              disabled={opening}
+            >
+              Connect Upwork MCP
+              <Icon name="external" />
             </Button>
-            <div className="login-divider"><span>or enter jobs manually</span></div>
+            <div className="login-divider">
+              <span>or enter jobs manually</span>
+            </div>
             <Button
               variant="secondary"
               className="preview-workspace"

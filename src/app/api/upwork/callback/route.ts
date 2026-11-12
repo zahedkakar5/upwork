@@ -33,13 +33,15 @@ export async function GET(request: Request) {
     jar.set(OAUTH_COOKIE, "", { path: "/api/upwork", maxAge: 0 });
     const params = new URL(request.url).searchParams;
     const state = params.get("state") || "";
-    const fail = () =>
-      NextResponse.redirect(new URL("/?connection=failed", origin), {
+    const fail = (reason = "failed") =>
+      NextResponse.redirect(new URL(`/?connection=${reason}`, origin), {
         headers: {
           "Cache-Control": "no-store",
           "Referrer-Policy": "no-referrer",
         },
       });
+    if (!pending.success || pending.data.expiresAt <= Date.now())
+      return fail("expired");
     if (
       !pending.success ||
       pending.data.expiresAt <= Date.now() ||

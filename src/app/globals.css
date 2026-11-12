@@ -2177,3 +2177,24 @@ nav.stepper .step-line {
   border-top: 1px solid #dedfd5;
   padding-top: 20px;
 }
+
+.suggestion-source select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d9ddcf;
+  border-radius: 8px;
+  background: #fff;
+  color: #344333;
+  font: inherit;
+}
+
+.discovery-filter-dialog {
+  width: min(900px, calc(100vw - 32px));
+  max-width: 900px;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.discovery-filter-dialog .suggestion-filters .button {
+  margin-top: 0;
+}

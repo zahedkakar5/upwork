@@ -1,8 +1,29 @@
 "use client";
+import { useState } from "react";
+import { apiRequest } from "@/lib/client/api";
+import { Button } from "../ui/button";
 import { useWorkspace } from "./workspace-provider";
 import { PageHeading } from "../ui/page-heading";
 export function Settings() {
   const { status, profile } = useWorkspace();
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState("");
+  async function reconnect() {
+    setConnecting(true);
+    setError("");
+    try {
+      const result = await apiRequest<{ url: string }>("/api/upwork/login", {
+        method: "POST",
+        body: "{}",
+      });
+      window.location.assign(result.url);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not connect Upwork.",
+      );
+      setConnecting(false);
+    }
+  }
   const rows = [
     [
       `${status.provider === "gemini" ? "Google Gemini" : "OpenAI"} · ${status.model}`,
@@ -14,8 +35,8 @@ export function Settings() {
     [
       "Upwork",
       status.upworkConnected
-        ? "Upwork authorization is active. Paste a job URL to import its title and brief. Review a submission preview or submit manually."
-        : "Connect Upwork from the login page to import jobs. Manual entry is available.",
+        ? "Upwork authorization is active. Paste a job URL to import its title and brief. Review proposals here and submit manually on Upwork."
+        : "Your Upwork connection is missing or expired. Reconnect below.",
       status.upworkConnected ? "Connected" : "Not connected",
     ],
     [
@@ -56,6 +77,14 @@ export function Settings() {
               <span className="setting-value">{value}</span>
             </div>
           ))}
+          <Button disabled={connecting} onClick={() => void reconnect()}>
+            {connecting ? "Connecting…" : "Reconnect Upwork MCP"}
+          </Button>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
           <p className="hint">
             Generate sends the brief, screening questions and saved About us
             profile to the configured AI provider. Provider retention rules

@@ -3,18 +3,17 @@ import { useWorkspace } from "../workspace/workspace-provider";
 import { CardHeader } from "../ui/card-header";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
-import { SubmissionPanel } from "./submission-panel";
 import { screeningQuestions } from "@/lib/client/task-state";
 export function ApprovedProposal() {
   const { task, copy, finish, moveToStep } = useWorkspace();
   if (!task.approved || !task.draft) return null;
-  const text = `AI-assisted proposal; reviewed by ${task.profileSnapshot?.memberName ?? "Jags"}.\n\n${task.draft.proposal_body}`;
+  const text = task.draft.proposal_body;
   const questions = screeningQuestions(task.job.questions);
   return (
     <>
       <CardHeader
         title="Ready for your next step."
-        subtitle="Review an Upwork submission preview, or copy the approved text."
+        subtitle="Copy the reviewed proposal and submit it yourself on Upwork."
         label="REVIEWED"
       />
       <div className="card-body">
@@ -35,7 +34,6 @@ export function ApprovedProposal() {
             </button>
           </div>
         ))}
-        <SubmissionPanel />
         <div className="complete">
           <div className="success-symbol">✓</div>
           <h2>

@@ -5,7 +5,9 @@ export function Dialog({
   title,
   children,
   onClose,
+  className,
 }: {
+  className?: string;
   title: string;
   children: ReactNode;
   onClose: () => void;
@@ -17,7 +19,12 @@ export function Dialog({
     return () => element?.close();
   }, []);
   return (
-    <dialog ref={ref} onCancel={onClose} aria-label={title}>
+    <dialog
+      className={className}
+      ref={ref}
+      onCancel={onClose}
+      aria-label={title}
+    >
       <h2>{title}</h2>
       {children}
       <Button variant="secondary" onClick={onClose}>

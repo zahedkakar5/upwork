@@ -9,7 +9,7 @@ This is a Next.js App Router application using React and strict TypeScript.
 - Every AI request must load the saved company profile, validate its version, validate structured output and reject a result if the profile changed in flight.
 - Edits invalidate proposal approval. Copying does not count as submission.
 - There are no sample case studies or invented company experience.
-- Upwork OAuth login and job import use Upwork MCP's OAuth 2.1 dynamic client registration and PKCE. Never add a static client secret or expose an MCP access token. Submission requires a reviewed Upwork preview and separate explicit confirmation of the exact proposal, bid, account and Connects cost. Never auto-retry an uncertain confirmation or spend on boosts or Connects purchases. Unknown tool schemas and screening-question mappings must fail closed. Do not label preview mode as authenticated Upwork access or fake a successful integration.
+- Upwork OAuth login and job import use Upwork MCP's OAuth 2.1 dynamic client registration and PKCE. Never add a static client secret or expose an MCP access token. Ron’s latest brief requires human review and manual submission on Upwork. Keep in-app submission disabled. Never auto-retry an uncertain confirmation or spend on boosts or Connects purchases. Unknown tool schemas and screening-question mappings must fail closed. Do not label preview mode as authenticated Upwork access or fake a successful integration.
 - Use the existing Gemini/OpenAI adapters; do not add unrelated integrations.
 - Validate meaningful changes with `npm run typecheck`, `npm test` and `npm run build`. Use the in-app browser for relevant UI checks. Never put real client details into fixtures or screenshots.
 
