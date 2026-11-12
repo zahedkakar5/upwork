@@ -6,6 +6,8 @@ vi.mock("next/headers", () => ({ cookies: async () => jar }));
 
 import {
   accessToken,
+  authorizationClient,
+  clientMetadata,
   createPkce,
   exchangeCode,
   matchesState,
@@ -65,6 +67,93 @@ describe("Upwork MCP connection", () => {
     expect(JSON.parse(request.body as string)).toMatchObject({
       token_endpoint_auth_method: "none",
     });
+  });
+  it("explains a rejected hosted callback and does not retry or fall back to localhost", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          error: "invalid_redirect_uri",
+          error_description: "private upstream content",
+        },
+        { status: 400 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetch);
+    await expect(
+      registerClient("https://fixture.vercel.app/api/upwork/callback"),
+    ).rejects.toThrow("Upwork returned invalid_redirect_uri");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it.each([429, 403, 500])(
+    "handles registration HTTP %s without exposing upstream content",
+    async (status) => {
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValue(
+            new Response("private upstream content", { status }),
+          ),
+      );
+      await expect(
+        registerClient(`${origin}/api/upwork/callback`),
+      ).rejects.toThrow(/Upwork/);
+    },
+  );
+  it("rejects a malformed successful registration response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({})));
+    await expect(
+      registerClient(`${origin}/api/upwork/callback`),
+    ).rejects.toThrow("invalid MCP registration response");
+  });
+  it("uses an HTTPS metadata document when Upwork advertises support", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({
+          issuer: "https://mcp.upwork.com",
+          client_id_metadata_document_supported: true,
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    const hostedOrigin = "https://fixture.vercel.app";
+    await expect(
+      authorizationClient(`${hostedOrigin}/api/upwork/callback`),
+    ).resolves.toBe(`${hostedOrigin}/api/upwork/client-metadata`);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(clientMetadata(hostedOrigin)).toMatchObject({
+      client_id: `${hostedOrigin}/api/upwork/client-metadata`,
+      redirect_uris: [`${hostedOrigin}/api/upwork/callback`],
+      token_endpoint_auth_method: "none",
+    });
+  });
+  it("falls back to registration only when metadata-document support is absent", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ issuer: "https://mcp.upwork.com" }),
+      )
+      .mockResolvedValueOnce(Response.json({ client_id: "fixture-client" }));
+    vi.stubGlobal("fetch", fetch);
+    await expect(
+      authorizationClient("https://fixture.vercel.app/api/upwork/callback"),
+    ).resolves.toBe("fixture-client");
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+  it("rejects unexpected authorization metadata issuers", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({
+          issuer: "https://invalid.example",
+          client_id_metadata_document_supported: true,
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    await expect(
+      authorizationClient("https://fixture.vercel.app/api/upwork/callback"),
+    ).rejects.toThrow("invalid sign-in capabilities");
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
   it("starts authorization with a private expiring PKCE state cookie", async () => {
     vi.stubGlobal(

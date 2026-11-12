@@ -5,7 +5,7 @@ import { AppError, errorResponse } from "@/lib/server/errors";
 import {
   OAUTH_COOKIE,
   createPkce,
-  registerClient,
+  authorizationClient,
   seal,
   upworkConfigured,
 } from "@/lib/server/upwork/connection";
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       );
     const origin = requestOrigin(request).origin;
     const redirectUri = `${origin}/api/upwork/callback`;
-    const clientId = await registerClient(redirectUri);
+    const clientId = await authorizationClient(redirectUri);
     const pkce = createPkce(),
       state = crypto.randomUUID();
     const authorize = new URL(

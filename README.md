@@ -110,6 +110,16 @@ uses dynamic client registration and PKCE, so no Upwork client ID, client secret
 or tenant ID needs to be created or stored. Set `APP_ORIGIN` to the exact public
 HTTPS origin of the deployed app and keep a stable private `SESSION_SECRET`.
 
+HTTPS deployments now check Upwork's official authorization-server metadata.
+When it advertises `client_id_metadata_document_supported`, sign-in uses the
+public `/api/upwork/client-metadata` document as its OAuth client ID, following
+the MCP client registration specification. It declares only this origin's exact
+callback URL and contains no credentials. Local HTTP clients and servers without
+that capability use dynamic registration. PKCE and encrypted state remain required.
+The metadata endpoint must be publicly reachable by Upwork (no Vercel deployment
+protection on the production domain). End-to-end hosted authorization still needs
+live verification after deployment.
+
 On Vercel, the exact platform-provided deployment, branch and production domains
 are also accepted when `VERCEL=1`. Arbitrary Host and cross-origin writes remain
 rejected. Environment changes require redeployment.
