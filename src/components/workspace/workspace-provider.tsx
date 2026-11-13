@@ -31,6 +31,13 @@ import type {
 } from "@/lib/types";
 import { Dialog } from "@/components/ui/dialog";
 
+import {
+  companionChanged,
+  companionPaired,
+  restoreCompanion,
+  disconnectCompanion,
+} from "@/lib/client/companion";
+
 const taskStorageKey = "nordstone.active-proposal.v1";
 
 function useWorkspaceState(
@@ -97,6 +104,7 @@ function useWorkspaceState(
     }
   }, [task]);
   const logout = async () => {
+    disconnectCompanion();
     reset();
     try {
       await apiRequest("/api/session", {
@@ -318,7 +326,17 @@ export function WorkspaceProvider({
   status: ConnectionStatus;
   children: ReactNode;
 }) {
-  const workspace = useWorkspaceState(initialProfile, status);
+  const [paired, setPaired] = useState(false);
+  useEffect(() => {
+    const changed = () => setPaired(companionPaired());
+    window.addEventListener(companionChanged, changed);
+    void restoreCompanion();
+    return () => window.removeEventListener(companionChanged, changed);
+  }, []);
+  const workspace = useWorkspaceState(initialProfile, {
+    ...status,
+    upworkConnected: status.upworkConnected || paired,
+  });
   return (
     <WorkspaceContext.Provider value={workspace}>
       {children}

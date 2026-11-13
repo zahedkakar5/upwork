@@ -157,3 +157,28 @@ Per Ron’s revised workflow, the submission UI is removed and the application P
 Safety review: official MCP access only, no website scraping or background polling. Persistent workspace-wide budgets conservatively cap searches/detail reads at 12/minute, 120/hour and 600/rolling day, in addition to the 15-second search cooldown. Other clients using the same Upwork account still consume its upstream limits. Guidance checked: https://support.upwork.com/hc/en-us/articles/56577997707923-Rate-limits-for-Upwork-MCP and https://support.upwork.com/hc/en-us/articles/43342677368467-Use-bots-and-other-automation-properly . This is an implementation review, not Upwork certification.
 
 Remaining launch checks: connect an eligible account, verify current tool schemas and actual result/question shapes, inspect client metrics and filters on representative live jobs, and measure posting-to-review latency. The eight-minute target is not guaranteed: a permitted event/notification ingestion mechanism has not been connected, and this app does not poll. Profile edits and availability/video changes remain Jags’s task.
+
+## Local MCP companion with the hosted website
+
+Run `pnpm build` then `node scripts/install-companion.mjs` on macOS to start the
+local production app automatically at login. Stop any existing app using port
+8765 first. The launch agent is `com.nordstone.upwork-companion`; stop it with
+`launchctl bootout gui/$(id -u)/com.nordstone.upwork-companion`.
+
+Open http://127.0.0.1:8765/companion, connect Upwork and explicitly generate a
+pairing code. On the hosted login choose **Connect through this computer**, then
+paste the code into companion settings. Chrome may require Local Network Access
+permission. Leave the local process running; the computer must be awake and on.
+
+Only the production origin `https://upwork-application-omega.vercel.app` can use
+this bridge. It binds to loopback and rejects Vercel execution, other hosts and
+other origins. A random 256-bit pairing capability authorizes only status, job
+search and job detail reads. Upwork cookies remain in local server memory; the
+website stores only the restricted pairing code in tab-scoped sessionStorage.
+Codes expire within 12 hours, rotate on generation and can be revoked locally.
+Local sign-out revokes the code. Process restart requires pairing again. Existing
+search cooldowns/read budgets and human-only proposal submission remain enforced.
+No OAuth credentials are copied to Vercel. AI drafting still uses the hosted
+server, which must have its own provider key. Profile persistence on Vercel still
+requires durable storage. Hosted-to-loopback connection requires live Chrome
+verification; it is not claimed operational until paired search succeeds.

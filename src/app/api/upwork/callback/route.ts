@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     const pending = z
       .object({
         state: z.string(),
+        returnTo: z.literal("/companion").optional(),
         redirectUri: z.string(),
         clientId: z.string(),
         verifier: z.string(),
@@ -62,12 +63,15 @@ export async function GET(request: Request) {
       const sessionCookie = issueSession(Date.now(), "upwork");
       const session = verifySession(sessionCookie)!;
       const maxAge = Math.min(12 * 60 * 60, token.expires_in);
-      const response = NextResponse.redirect(new URL("/proposals", origin), {
-        headers: {
-          "Cache-Control": "no-store",
-          "Referrer-Policy": "no-referrer",
+      const response = NextResponse.redirect(
+        new URL(pending.data.returnTo ?? "/proposals", origin),
+        {
+          headers: {
+            "Cache-Control": "no-store",
+            "Referrer-Policy": "no-referrer",
+          },
         },
-      });
+      );
       const options = {
         httpOnly: true,
         sameSite: "lax" as const,

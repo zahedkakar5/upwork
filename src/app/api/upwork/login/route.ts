@@ -20,6 +20,9 @@ export async function POST(request: Request) {
         503,
         "Set a stable SESSION_SECRET before connecting Upwork.",
       );
+    const input = await request.json().catch(() => ({}));
+    const returnTo =
+      input?.returnTo === "/companion" ? "/companion" : undefined;
     const origin = requestOrigin(request).origin;
     const redirectUri = `${origin}/api/upwork/callback`;
     const clientId = await registerClient(redirectUri);
@@ -45,6 +48,7 @@ export async function POST(request: Request) {
       OAUTH_COOKIE,
       seal({
         state,
+        returnTo,
         redirectUri,
         clientId,
         verifier: pkce.verifier,

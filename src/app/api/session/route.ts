@@ -1,3 +1,4 @@
+import { clearCompanionPair } from "@/lib/server/companion";
 import { UPWORK_COOKIE, OAUTH_COOKIE } from "@/lib/server/upwork/connection";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
 }
 export async function DELETE(request: Request) {
   try {
-    await requireApiSession(request, true);
+    const session = await requireApiSession(request, true);
+    clearCompanionPair(session.id);
     const jar = await cookies();
     jar.delete(SESSION_COOKIE);
     jar.delete(UPWORK_COOKIE);

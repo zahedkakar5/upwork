@@ -32,7 +32,7 @@ export function LoginScreen({
       setOpening(false);
     }
   }
-  async function openWorkspace() {
+  async function openWorkspace(destination = "/dashboard") {
     setOpening(true);
     setError("");
     try {
@@ -40,7 +40,7 @@ export function LoginScreen({
         method: "POST",
         body: JSON.stringify({ preview: true }),
       });
-      router.push("/dashboard");
+      router.push(destination);
       router.refresh();
     } catch (cause) {
       setError(
@@ -119,13 +119,20 @@ export function LoginScreen({
               Connect Upwork MCP
               <Icon name="external" />
             </Button>
+            <Button
+              variant="secondary"
+              disabled={opening}
+              onClick={() => void openWorkspace("/settings")}
+            >
+              Connect through this computer
+            </Button>
             <div className="login-divider">
               <span>or enter jobs manually</span>
             </div>
             <Button
               variant="secondary"
               className="preview-workspace"
-              onClick={openWorkspace}
+              onClick={() => void openWorkspace()}
               disabled={opening}
             >
               {opening ? "Opening workspace…" : "Open workspace"}
