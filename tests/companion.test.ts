@@ -48,6 +48,22 @@ describe("local companion boundaries", () => {
     vi.stubEnv("VERCEL", "1");
     expect(() => assertLocalCompanion(request())).toThrow();
   });
+  it("accepts Next's internal localhost URL only with the exact loopback Host", () => {
+    expect(() =>
+      assertLocalCompanion(
+        new Request("http://localhost:8765/api/companion/status", {
+          headers: { host: "127.0.0.1:8765" },
+        }),
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertLocalCompanion(
+        new Request("http://localhost:8765/api/companion/status", {
+          headers: { host: "evil.example" },
+        }),
+      ),
+    ).toThrow();
+  });
   it("requires the exact paired website and an unguessable code", () => {
     const pair = createCompanionPair(input);
     expect(() => requireCompanionPair(request("bad"))).toThrow();
@@ -87,15 +103,13 @@ describe("local companion boundaries", () => {
   });
   it("proxies status without exposing local cookies, csrf or provider configuration", async () => {
     const pair = createCompanionPair(input);
-    const fetch = vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          upworkConnected: true,
-          csrf: "never-to-browser",
-          model: "private-config",
-        }),
-      );
+    const fetch = vi.fn().mockResolvedValue(
+      Response.json({
+        upworkConnected: true,
+        csrf: "never-to-browser",
+        model: "private-config",
+      }),
+    );
     vi.stubGlobal("fetch", fetch);
     const r = await POST(request(pair.code), {
       params: Promise.resolve({ operation: "status" }),

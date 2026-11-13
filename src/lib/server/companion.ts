@@ -19,7 +19,9 @@ const digest = (value: string) =>
 export function assertLocalCompanion(request: Request) {
   if (
     process.env.VERCEL === "1" ||
-    new URL(request.url).origin !== companionOrigin ||
+    new URL(request.url).protocol !== "http:" ||
+    !["127.0.0.1", "localhost"].includes(new URL(request.url).hostname) ||
+    new URL(request.url).port !== "8765" ||
     request.headers.get("host") !== "127.0.0.1:8765"
   )
     throw new AppError(
