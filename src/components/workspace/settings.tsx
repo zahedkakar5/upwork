@@ -1,5 +1,4 @@
 "use client";
-import { CompanionPanel } from "../companion-panel";
 import { useState } from "react";
 import { apiRequest } from "@/lib/client/api";
 import { Button } from "../ui/button";
@@ -67,7 +66,6 @@ export function Settings() {
         title="Your workspace."
         subtitle="Connections and workspace settings."
       />
-      <CompanionPanel />
       <section className="card">
         <div className="card-body">
           {rows.map(([title, detail, value]) => (

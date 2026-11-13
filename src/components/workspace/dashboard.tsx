@@ -332,12 +332,7 @@ export function Dashboard() {
             Search real jobs through Upwork MCP, then choose one to prepare a
             tailored proposal.
           </p>
-          <Button onClick={() => router.push("/settings")}>
-            Connect companion
-          </Button>
-          <Button variant="secondary" onClick={() => void connect()}>
-            Direct Upwork sign-in
-          </Button>
+          <Button onClick={() => void connect()}>Connect Upwork MCP</Button>
         </section>
       )}
       {error && (

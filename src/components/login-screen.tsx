@@ -119,13 +119,6 @@ export function LoginScreen({
               Connect Upwork MCP
               <Icon name="external" />
             </Button>
-            <Button
-              variant="secondary"
-              disabled={opening}
-              onClick={() => void openWorkspace("/settings")}
-            >
-              Connect through this computer
-            </Button>
             <div className="login-divider">
               <span>or enter jobs manually</span>
             </div>
