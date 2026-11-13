@@ -12,17 +12,25 @@ export async function companionRequest(
 ) {
   let response: Response;
   try {
-    response = await fetch(`${origin}/api/companion/${operation}`, {
+    const requestOptions: RequestInit & { targetAddressSpace: "loopback" } = {
       method: "POST",
       body: options.body ?? "{}",
-      signal: options.signal ?? AbortSignal.timeout(65_000),
+      signal:
+        options.signal ??
+        AbortSignal.timeout(operation === "status" ? 10_000 : 65_000),
       credentials: "omit",
+      mode: "cors",
+      targetAddressSpace: "loopback",
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${pairingCode}`,
       },
-    });
+    };
+    response = await fetch(
+      `${origin}/api/companion/${operation}`,
+      requestOptions,
+    );
   } catch {
     if (code) disconnectCompanion();
     throw new Error(

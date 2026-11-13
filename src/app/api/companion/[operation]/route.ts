@@ -21,6 +21,7 @@ export async function POST(
 ) {
   try {
     const pair = requireCompanionPair(request);
+    console.info("Companion read request accepted");
     const { operation } = await context.params;
     const path = (
       {
@@ -51,6 +52,10 @@ export async function POST(
       body,
     });
     const result = await upstream.json();
+    console.info("Companion local read completed", {
+      operation,
+      status: upstream.status,
+    });
     return companionCors(
       request,
       Response.json(
